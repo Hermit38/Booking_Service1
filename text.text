@@ -1,14 +1,14 @@
-Инфраструктуры
++ Инфраструктуры
 
-config/settings.py
++ config/settings.py
 
-api/models.py 
++ api/models.py 
 
-api/serializers.py 
++ api/serializers.py 
 
-api/views.py
++ api/views.py
 
-api/urls.py + config/urls.py
++ api/urls.py + config/urls.py
 
 tests/
 

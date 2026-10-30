@@ -59,8 +59,23 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         fields = ["user", "room", "date_start", "date_end"]
 
     def validate(self, attrs):
-        if attrs["date_end"] < attrs["date_start"]:
+        date_start = attrs["date_start"]
+        date_end = attrs["date_end"]
+
+        if date_end < date_start:
             raise serializers.ValidationError(
                 {"date_end": "date_end должен быть больше date_start"}
             )
+        
+        # проверка пересечения: [start, end) — date_end не занимает ночь
+        overlapping = Booking.objects.filter(
+            room=attrs["room"],
+            date_start__lt=date_end,   # начало существующей < конец новой
+            date_end__gt=date_start,   # конец существующей > начало новой
+        )
+        if overlapping.exists():
+            raise serializers.ValidationError(
+                {"error": "Room is not available for these dates"}
+            )
+        
         return attrs
