@@ -10,9 +10,9 @@
 
 + api/urls.py + config/urls.py
 
-tests/
++ tests/
 
-Dockerfile + app в compose
++ Dockerfile + app в compose
 
 README
 

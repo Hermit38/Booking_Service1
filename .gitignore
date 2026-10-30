@@ -1,27 +1,46 @@
-# Python
-__pycache__/
+# git
+.git
+.gitignore
+
+# Python / venv (хостовый — Windows-бинарники!)
+.venv
+venv
+__pycache__
 *.py[cod]
-*.egg-info/
+*$py.class
 
-# Poetry / venv
-.venv/
-venv/
+# кэши
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.coverage
+htmlcov
+coverage.xml
 
-# Env / secrets
+# секреты
 .env
 .env.*
 !.env.example
 
-# Кэши
-.pytest_cache/
-.ruff_cache/
-.mypy_cache/
-
 # IDE / OS
-.idea/
-.vscode/
+.idea
+.vscode
+*.swp
 .DS_Store
 Thumbs.db
 
-# Docker (не обязательно, но чисто)
+# логи / локальная БД
 *.log
+db.sqlite3
+
+# Docker (не в контекст)
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# тесты (в прод-образе не нужны; если хочешь гонять в контейнере — убери)
+tests/
+
+# документация (не в образе; pyproject.toml readme — см. ниже)
+*.md
+!README.md

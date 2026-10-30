@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:17
-    container_name: booking_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -19,6 +18,26 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env                       # все переменные из .env
+    environment:
+      POSTGRES_HOST: db            # переопределяем: внутри сети хост = сервис
+      POSTGRES_PORT: 5432          # внутренний порт (не хост-порт 5433)
+    ports:
+      - "9000:9000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:9000/users').status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
 volumes:
   pgdata:
