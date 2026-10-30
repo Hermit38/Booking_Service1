@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, dev]
+  pull_request:
+    branches: [main, master, dev]
+
+# минимум прав (безопасность)
+permissions:
+  contents: read
+
+# отменять устаревшие прогоны в той же ветке
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15   # не «висеть» 360 мин по умолчанию
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: ${{ secrets.CI_POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.CI_POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U ${{ secrets.CI_POSTGRES_USER }} -d ${{ secrets.CI_POSTGRES_DB }}"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DJANGO_SECRET_KEY: ${{ secrets.CI_DJANGO_SECRET_KEY }}
+      POSTGRES_DB: ${{ secrets.CI_POSTGRES_DB }}
+      POSTGRES_USER: ${{ secrets.CI_POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Cache pip + poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/pypoetry
+          key: ${{ runner.os }}-pip-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-poetry-
+
+      - name: Install Poetry
+        run: pip install "poetry==2.5.1"
+
+      - name: Install dependencies
+        run: poetry install --no-root --with dev
+
+      - name: Ruff (lint)
+        run: poetry run ruff check .
+
+      - name: Ruff (format check)
+        run: poetry run ruff format --check .
+
+      - name: Pytest
+        run: poetry run pytest -v
