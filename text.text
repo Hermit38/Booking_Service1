@@ -1,0 +1,19 @@
+Инфраструктуры
+
+config/settings.py
+
+api/models.py 
+
+api/serializers.py 
+
+api/views.py
+
+api/urls.py + config/urls.py
+
+tests/
+
+Dockerfile + app в compose
+
+README
+
+GitHub
