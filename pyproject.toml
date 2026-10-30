@@ -1,0 +1,37 @@
+[project]
+name = "booking-service"
+version = "0.1.0"
+description = "Service booking hotels"
+authors = [
+    {name = "Boris",email = "bsuhorukov97@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "django (>=6.1.2,<7.0.0)",
+    "djangorestframework (>=3.18.3,<4.0.0)",
+    "psycopg[binary] (>=3.3.6,<4.0.0)",
+    "python-dotenv (>=1.2.4,<2.0.0)"
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.2.0,<10.0.0)",
+    "pytest-django (>=4.14.0,<5.0.0)",
+    "ruff (>=0.17.3,<0.18.0)"
+]
+
+[tool.poetry]
+package-mode = false
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313" 
