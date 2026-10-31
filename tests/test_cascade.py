@@ -34,4 +34,4 @@ def test_delete_user_with_bookings_restrict(client: APIClient, user: User, room:
     resp = client.delete(f"/users/{user.id}")
     assert resp.status_code == 400
     assert "error" in resp.json()
-    assert User.objects.filter(id=user.id).exists()   # не удалён
+    assert User.objects.filter(id=user.id).exists()  # не удалён

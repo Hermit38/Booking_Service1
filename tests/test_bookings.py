@@ -11,40 +11,60 @@ def client() -> APIClient:
 
 @pytest.mark.django_db
 def test_create_booking(client: APIClient, user: User, room: Room) -> None:
-    resp = client.post("/bookings", {
-        "user": user.id, "room": room.id,
-        "date_start": "2026-05-01", "date_end": "2026-05-05",
-    })
+    resp = client.post(
+        "/bookings",
+        {
+            "user": user.id,
+            "room": room.id,
+            "date_start": "2026-05-01",
+            "date_end": "2026-05-05",
+        },
+    )
     assert resp.status_code == 201
     assert "booking_id" in resp.json()
 
 
 @pytest.mark.django_db
 def test_create_booking_date_end_before_start(client: APIClient, user: User, room: Room) -> None:
-    resp = client.post("/bookings", {
-        "user": user.id, "room": room.id,
-        "date_start": "2026-05-05", "date_end": "2026-05-01",
-    })
+    resp = client.post(
+        "/bookings",
+        {
+            "user": user.id,
+            "room": room.id,
+            "date_start": "2026-05-05",
+            "date_end": "2026-05-01",
+        },
+    )
     assert resp.status_code == 400
     assert "error" in resp.json()
 
 
 @pytest.mark.django_db
 def test_create_booking_invalid_date(client: APIClient, user: User, room: Room) -> None:
-    resp = client.post("/bookings", {
-        "user": user.id, "room": room.id,
-        "date_start": "2026-13-45", "date_end": "2026-05-05",
-    })
+    resp = client.post(
+        "/bookings",
+        {
+            "user": user.id,
+            "room": room.id,
+            "date_start": "2026-13-45",
+            "date_end": "2026-05-05",
+        },
+    )
     assert resp.status_code == 400
     assert "error" in resp.json()
 
 
 @pytest.mark.django_db
 def test_create_booking_nonexistent_room(client: APIClient, user: User) -> None:
-    resp = client.post("/bookings", {
-        "user": user.id, "room": 999999,
-        "date_start": "2026-05-01", "date_end": "2026-05-05",
-    })
+    resp = client.post(
+        "/bookings",
+        {
+            "user": user.id,
+            "room": 999999,
+            "date_start": "2026-05-01",
+            "date_end": "2026-05-05",
+        },
+    )
     assert resp.status_code == 400
     assert "error" in resp.json()
 
@@ -53,14 +73,21 @@ def test_create_booking_nonexistent_room(client: APIClient, user: User) -> None:
 def test_create_booking_overlap(client: APIClient, user: User, room: Room) -> None:
     # существующая [2026-06-20, 2026-06-25]
     Booking.objects.create(
-        user=user, room=room,
-        date_start="2026-06-20", date_end="2026-06-25",
+        user=user,
+        room=room,
+        date_start="2026-06-20",
+        date_end="2026-06-25",
     )
     # пересекается [2026-06-23, 2026-06-27] → 400
-    resp = client.post("/bookings", {
-        "user": user.id, "room": room.id,
-        "date_start": "2026-06-23", "date_end": "2026-06-27",
-    })
+    resp = client.post(
+        "/bookings",
+        {
+            "user": user.id,
+            "room": room.id,
+            "date_start": "2026-06-23",
+            "date_end": "2026-06-27",
+        },
+    )
     assert resp.status_code == 400
     assert "error" in resp.json()
 
@@ -69,10 +96,15 @@ def test_create_booking_overlap(client: APIClient, user: User, room: Room) -> No
 def test_create_booking_no_overlap_after(client: APIClient, user: User, room: Room) -> None:
     Booking.objects.create(user=user, room=room, date_start="2026-06-20", date_end="2026-06-25")
     # после выезда [2026-06-26, 2026-06-28] → 201
-    resp = client.post("/bookings", {
-        "user": user.id, "room": room.id,
-        "date_start": "2026-06-26", "date_end": "2026-06-28",
-    })
+    resp = client.post(
+        "/bookings",
+        {
+            "user": user.id,
+            "room": room.id,
+            "date_start": "2026-06-26",
+            "date_end": "2026-06-28",
+        },
+    )
     assert resp.status_code == 201
 
 
@@ -80,10 +112,15 @@ def test_create_booking_no_overlap_after(client: APIClient, user: User, room: Ro
 def test_create_booking_checkin_on_checkout_day(client: APIClient, user: User, room: Room) -> None:
     Booking.objects.create(user=user, room=room, date_start="2026-06-20", date_end="2026-06-25")
     # заезд в день выезда [2026-06-25, 2026-06-27] → 201 (вариант `<`)
-    resp = client.post("/bookings", {
-        "user": user.id, "room": room.id,
-        "date_start": "2026-06-25", "date_end": "2026-06-27",
-    })
+    resp = client.post(
+        "/bookings",
+        {
+            "user": user.id,
+            "room": room.id,
+            "date_start": "2026-06-25",
+            "date_end": "2026-06-27",
+        },
+    )
     assert resp.status_code == 201
 
 

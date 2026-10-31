@@ -20,6 +20,7 @@ from .serializers import (
 # USERS
 # ============================================================
 
+
 class UserListCreateView(APIView):
     """GET /users — список; POST /users — создать."""
 
@@ -69,6 +70,7 @@ class UserDetailView(APIView):
 # HOTELS
 # ============================================================
 
+
 class HotelListCreateView(APIView):
     """GET /hotels — список; POST /hotels — создать."""
 
@@ -104,13 +106,14 @@ class HotelDetailView(APIView):
             hotel = Hotel.objects.get(id=hotel_id)
         except Hotel.DoesNotExist:
             return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
-        hotel.delete()   # CASCADE: rooms -> bookings
+        hotel.delete()  # CASCADE: rooms -> bookings
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # ============================================================
 # ROOMS
 # ============================================================
+
 
 class RoomListCreateView(APIView):
     """GET /rooms?hotel_id=&sort=price|created_at&order=asc|desc; POST /rooms."""
@@ -174,6 +177,7 @@ class RoomDetailView(APIView):
 # ============================================================
 # BOOKINGS
 # ============================================================
+
 
 class BookingListCreateView(APIView):
     """GET /bookings?room_id=&user_id=; POST /bookings."""

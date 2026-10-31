@@ -11,10 +11,15 @@ def client() -> APIClient:
 
 @pytest.mark.django_db
 def test_create_room(client: APIClient, hotel: Hotel) -> None:
-    resp = client.post("/rooms", {
-        "hotel": hotel.id, "room_number": "102",
-        "description": "Deluxe", "price": "8500.00",
-    })
+    resp = client.post(
+        "/rooms",
+        {
+            "hotel": hotel.id,
+            "room_number": "102",
+            "description": "Deluxe",
+            "price": "8500.00",
+        },
+    )
     assert resp.status_code == 201
     assert "room_id" in resp.json()
 
@@ -22,10 +27,15 @@ def test_create_room(client: APIClient, hotel: Hotel) -> None:
 @pytest.mark.django_db
 def test_create_room_duplicate_number(client: APIClient, room: Room) -> None:
     # room: hotel=..., room_number="101"
-    resp = client.post("/rooms", {
-        "hotel": room.hotel.id, "room_number": room.room_number,
-        "description": "Другой", "price": "6000.00",
-    })
+    resp = client.post(
+        "/rooms",
+        {
+            "hotel": room.hotel.id,
+            "room_number": room.room_number,
+            "description": "Другой",
+            "price": "6000.00",
+        },
+    )
     assert resp.status_code == 400
     assert "error" in resp.json()
 
@@ -52,7 +62,7 @@ def test_list_rooms_sort_price_asc(client: APIClient, hotel: Hotel) -> None:
 
     resp = client.get(f"/rooms?hotel_id={hotel.id}&sort=price&order=asc")
     prices = [r["price"] for r in resp.json()]
-    assert prices == sorted(prices)   # 1000, 3000, 5000
+    assert prices == sorted(prices)  # 1000, 3000, 5000
 
 
 @pytest.mark.django_db
@@ -63,7 +73,7 @@ def test_list_rooms_sort_price_desc(client: APIClient, hotel: Hotel) -> None:
 
     resp = client.get(f"/rooms?hotel_id={hotel.id}&sort=price&order=desc")
     prices = [r["price"] for r in resp.json()]
-    assert prices == sorted(prices, reverse=True)   # 5000, 3000, 1000
+    assert prices == sorted(prices, reverse=True)  # 5000, 3000, 1000
 
 
 @pytest.mark.django_db

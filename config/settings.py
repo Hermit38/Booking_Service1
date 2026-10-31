@@ -31,22 +31,22 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
 ]
 
-ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
+WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Database
@@ -55,11 +55,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ["POSTGRES_DB"],           # без дефолта — явная ошибка
-        "USER": os.environ["POSTGRES_USER"],         # без дефолта
-        "PASSWORD": os.environ["POSTGRES_PASSWORD"], # без дефолта (секрет!)
+        "NAME": os.environ["POSTGRES_DB"],  # без дефолта — явная ошибка
+        "USER": os.environ["POSTGRES_USER"],  # без дефолта
+        "PASSWORD": os.environ["POSTGRES_PASSWORD"],  # без дефолта (секрет!)
         "HOST": os.getenv("POSTGRES_HOST", "localhost"),  # дефолт ок
-        "PORT": os.getenv("POSTGRES_PORT", "5432"),       # дефолт ок
+        "PORT": os.getenv("POSTGRES_PORT", "5432"),  # дефолт ок
     }
 }
 
@@ -77,9 +77,9 @@ REST_FRAMEWORK = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -89,4 +89,4 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"

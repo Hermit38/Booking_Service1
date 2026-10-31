@@ -8,6 +8,7 @@ from .models import Booking, Hotel, Room, User
 # Чтение (ответы API)
 # ------------------------------------------------------------
 
+
 class UserSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
@@ -35,6 +36,7 @@ class BookingSerializer(serializers.ModelSerializer[Booking]):  # Исправл
 # ------------------------------------------------------------
 # Создание (вход API, с валидацией)
 # ------------------------------------------------------------
+
 
 class UserCreateSerializer(serializers.ModelSerializer[User]):
     class Meta:
@@ -74,16 +76,14 @@ class BookingCreateSerializer(serializers.ModelSerializer[Booking]):  # Испр
             raise serializers.ValidationError(
                 {"date_end": "date_end должен быть больше date_start"}
             )
-        
+
         # проверка пересечения: [start, end) — date_end не занимает ночь
         overlapping = Booking.objects.filter(
-            room=raw_room,              # Исправлено: передаем проверенный Room
-            date_start__lt=raw_end,     # начало существующей < конец новой
-            date_end__gt=raw_start,     # конец существующей > начало новой
+            room=raw_room,  # Исправлено: передаем проверенный Room
+            date_start__lt=raw_end,  # начало существующей < конец новой
+            date_end__gt=raw_start,  # конец существующей > начало новой
         )
         if overlapping.exists():
-            raise serializers.ValidationError(
-                {"error": "Room is not available for these dates"}
-            )
-        
+            raise serializers.ValidationError({"error": "Room is not available for these dates"})
+
         return attrs
