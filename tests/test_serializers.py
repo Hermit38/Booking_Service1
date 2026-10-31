@@ -1,13 +1,12 @@
 import pytest
 
-from api.models import Booking, Hotel, Room
+from api.models import Booking, Hotel, Room, User
 from api.serializers import (
     BookingCreateSerializer,
     HotelCreateSerializer,
     RoomCreateSerializer,
     UserCreateSerializer,
 )
-
 
 # ============================================================
 # Booking — невалидные данные (parametrize)
@@ -24,7 +23,7 @@ from api.serializers import (
     ({"date_start": "2026-05-01", "date_end": "2026-05-05", "user": 999999}, "user"),
 ])
 @pytest.mark.django_db
-def test_booking_invalid(user, room, data, error_field):
+def test_booking_invalid(user: User, room: Room, data: dict[str, object], error_field: str) -> None:
     payload = {"user": user.id, "room": room.id, **data}
     s = BookingCreateSerializer(data=payload)
     assert s.is_valid() is False
@@ -32,7 +31,7 @@ def test_booking_invalid(user, room, data, error_field):
 
 
 @pytest.mark.django_db
-def test_booking_date_end_equals_start(user, room):
+def test_booking_date_end_equals_start(user: User, room: Room) -> None:
     # [start, end) — один день (start == end) допустим
     s = BookingCreateSerializer(data={
         "user": user.id, "room": room.id,
@@ -55,7 +54,9 @@ def test_booking_date_end_equals_start(user, room):
     ("2026-06-10", "2026-06-20", True),    # выезд в день заезда — не пересекается
 ])
 @pytest.mark.django_db
-def test_booking_overlap(user, room, new_start, new_end, expected_valid):
+def test_booking_overlap(
+    user: User, room: Room, new_start: str, new_end: str, expected_valid: bool
+) -> None:
     Booking.objects.create(user=user, room=room, date_start="2026-06-20", date_end="2026-06-25")
     s = BookingCreateSerializer(data={
         "user": user.id, "room": room.id,
@@ -65,7 +66,7 @@ def test_booking_overlap(user, room, new_start, new_end, expected_valid):
 
 
 @pytest.mark.django_db
-def test_booking_overlap_different_room(user, room):
+def test_booking_overlap_different_room(user: User, room: Room) -> None:
     other_hotel = Hotel.objects.create(name="Другой", address="г. X, ул. Y, 2")
     other_room = Room.objects.create(
         hotel=other_hotel, room_number="201", description="B", price="3000.00",
@@ -83,20 +84,20 @@ def test_booking_overlap_different_room(user, room):
 # ============================================================
 
 @pytest.mark.django_db
-def test_user_serializer_duplicate(user):
+def test_user_serializer_duplicate(user: User) -> None:
     s = UserCreateSerializer(data={"full_name": user.full_name, "phone": user.phone})
     assert s.is_valid() is False
     assert "non_field_errors" in s.errors
 
 
 @pytest.mark.django_db
-def test_user_serializer_same_phone_different_name(user):
+def test_user_serializer_same_phone_different_name(user: User) -> None:
     s = UserCreateSerializer(data={"full_name": "Другое Имя", "phone": user.phone})
     assert s.is_valid() is True
 
 
 @pytest.mark.django_db
-def test_user_serializer_valid(user):
+def test_user_serializer_valid(user: User) -> None:
     s = UserCreateSerializer(data={"full_name": "Другой", "phone": "+79990000099"})
     assert s.is_valid() is True
 
@@ -106,14 +107,14 @@ def test_user_serializer_valid(user):
 # ============================================================
 
 @pytest.mark.django_db
-def test_hotel_serializer_duplicate_address(hotel):
+def test_hotel_serializer_duplicate_address(hotel: Hotel) -> None:
     s = HotelCreateSerializer(data={"name": "Другой", "address": hotel.address})
     assert s.is_valid() is False
     assert "address" in s.errors
 
 
 @pytest.mark.django_db
-def test_hotel_serializer_valid(hotel):
+def test_hotel_serializer_valid(hotel: Hotel) -> None:
     s = HotelCreateSerializer(data={"name": "Новый", "address": "г. Казань, ул. Ленина, 1"})
     assert s.is_valid() is True
 
@@ -123,7 +124,7 @@ def test_hotel_serializer_valid(hotel):
 # ============================================================
 
 @pytest.mark.django_db
-def test_room_serializer_duplicate_number(room):
+def test_room_serializer_duplicate_number(room: Room) -> None:
     s = RoomCreateSerializer(data={
         "hotel": room.hotel.id, "room_number": room.room_number,
         "description": "Другой", "price": "6000.00",
@@ -133,7 +134,7 @@ def test_room_serializer_duplicate_number(room):
 
 
 @pytest.mark.django_db
-def test_room_serializer_same_number_different_hotel(room):
+def test_room_serializer_same_number_different_hotel(room: Room) -> None:
     other_hotel = Hotel.objects.create(name="Другой", address="г. X, ул. Y, 2")
     s = RoomCreateSerializer(data={
         "hotel": other_hotel.id, "room_number": room.room_number,
@@ -143,7 +144,7 @@ def test_room_serializer_same_number_different_hotel(room):
 
 
 @pytest.mark.django_db
-def test_room_serializer_valid(hotel):
+def test_room_serializer_valid(hotel: Hotel) -> None:
     s = RoomCreateSerializer(data={
         "hotel": hotel.id, "room_number": "999",
         "description": "New", "price": "1000.00",

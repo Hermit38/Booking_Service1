@@ -28,21 +28,21 @@ jobs:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_DB: ${{ secrets.CI_POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.CI_POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
+          POSTGRES_DB: ci_process
+          POSTGRES_USER: ci_process
+          POSTGRES_PASSWORD: ci_process
         ports: [5432:5432]
         options: >-
-          --health-cmd "pg_isready -U ${{ secrets.CI_POSTGRES_USER }} -d ${{ secrets.CI_POSTGRES_DB }}"
+          --health-cmd "pg_isready -U ci_process -d ci_process"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
 
     env:
-      DJANGO_SECRET_KEY: ${{ secrets.CI_DJANGO_SECRET_KEY }}
-      POSTGRES_DB: ${{ secrets.CI_POSTGRES_DB }}
-      POSTGRES_USER: ${{ secrets.CI_POSTGRES_USER }}
-      POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
+      DJANGO_SECRET_KEY: ci-only-secret-key-do-not-use-in-prod-0123456789abcdef
+      POSTGRES_DB: ci_process
+      POSTGRES_USER: ci_process
+      POSTGRES_PASSWORD: ci_process
       POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
 

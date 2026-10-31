@@ -7,7 +7,7 @@ from rest_framework.views import exception_handler
 logger = logging.getLogger(__name__)
 
 
-def _flatten_errors(data) -> str:
+def _flatten_errors(data: object) -> str:
     if isinstance(data, dict):
         if "detail" in data and len(data) == 1:
             return str(data["detail"])
@@ -23,7 +23,7 @@ def _flatten_errors(data) -> str:
     return str(data)
 
 
-def custom_exception_handler(exc, context):
+def custom_exception_handler(exc: Exception, context: dict[str, object]) -> Response:
     response = exception_handler(exc, context)
     if response is not None:
         return Response(
@@ -32,4 +32,7 @@ def custom_exception_handler(exc, context):
             headers=response.headers,
         )
     logger.exception("Unhandled exception: %s", exc)
-    return Response({"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return Response(
+        {"error": "Internal server error"},
+        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    )

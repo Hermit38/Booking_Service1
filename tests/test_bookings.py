@@ -1,18 +1,16 @@
-from decimal import Decimal
-
 import pytest
 from rest_framework.test import APIClient
 
-from api.models import Booking, Hotel, Room
+from api.models import Booking, Hotel, Room, User
 
 
 @pytest.fixture
-def client():
+def client() -> APIClient:
     return APIClient()
 
 
 @pytest.mark.django_db
-def test_create_booking(client, user, room):
+def test_create_booking(client: APIClient, user: User, room: Room) -> None:
     resp = client.post("/bookings", {
         "user": user.id, "room": room.id,
         "date_start": "2026-05-01", "date_end": "2026-05-05",
@@ -22,7 +20,7 @@ def test_create_booking(client, user, room):
 
 
 @pytest.mark.django_db
-def test_create_booking_date_end_before_start(client, user, room):
+def test_create_booking_date_end_before_start(client: APIClient, user: User, room: Room) -> None:
     resp = client.post("/bookings", {
         "user": user.id, "room": room.id,
         "date_start": "2026-05-05", "date_end": "2026-05-01",
@@ -32,7 +30,7 @@ def test_create_booking_date_end_before_start(client, user, room):
 
 
 @pytest.mark.django_db
-def test_create_booking_invalid_date(client, user, room):
+def test_create_booking_invalid_date(client: APIClient, user: User, room: Room) -> None:
     resp = client.post("/bookings", {
         "user": user.id, "room": room.id,
         "date_start": "2026-13-45", "date_end": "2026-05-05",
@@ -42,7 +40,7 @@ def test_create_booking_invalid_date(client, user, room):
 
 
 @pytest.mark.django_db
-def test_create_booking_nonexistent_room(client, user):
+def test_create_booking_nonexistent_room(client: APIClient, user: User) -> None:
     resp = client.post("/bookings", {
         "user": user.id, "room": 999999,
         "date_start": "2026-05-01", "date_end": "2026-05-05",
@@ -52,7 +50,7 @@ def test_create_booking_nonexistent_room(client, user):
 
 
 @pytest.mark.django_db
-def test_create_booking_overlap(client, user, room):
+def test_create_booking_overlap(client: APIClient, user: User, room: Room) -> None:
     # существующая [2026-06-20, 2026-06-25]
     Booking.objects.create(
         user=user, room=room,
@@ -68,7 +66,7 @@ def test_create_booking_overlap(client, user, room):
 
 
 @pytest.mark.django_db
-def test_create_booking_no_overlap_after(client, user, room):
+def test_create_booking_no_overlap_after(client: APIClient, user: User, room: Room) -> None:
     Booking.objects.create(user=user, room=room, date_start="2026-06-20", date_end="2026-06-25")
     # после выезда [2026-06-26, 2026-06-28] → 201
     resp = client.post("/bookings", {
@@ -79,7 +77,7 @@ def test_create_booking_no_overlap_after(client, user, room):
 
 
 @pytest.mark.django_db
-def test_create_booking_checkin_on_checkout_day(client, user, room):
+def test_create_booking_checkin_on_checkout_day(client: APIClient, user: User, room: Room) -> None:
     Booking.objects.create(user=user, room=room, date_start="2026-06-20", date_end="2026-06-25")
     # заезд в день выезда [2026-06-25, 2026-06-27] → 201 (вариант `<`)
     resp = client.post("/bookings", {
@@ -90,7 +88,7 @@ def test_create_booking_checkin_on_checkout_day(client, user, room):
 
 
 @pytest.mark.django_db
-def test_list_bookings_by_room(client, user, room):
+def test_list_bookings_by_room(client: APIClient, user: User, room: Room) -> None:
     Booking.objects.create(user=user, room=room, date_start="2026-05-10", date_end="2026-05-12")
     Booking.objects.create(user=user, room=room, date_start="2026-05-01", date_end="2026-05-03")
     resp = client.get(f"/bookings?room_id={room.id}")
@@ -103,7 +101,7 @@ def test_list_bookings_by_room(client, user, room):
 
 
 @pytest.mark.django_db
-def test_list_bookings_by_user(client, user, room):
+def test_list_bookings_by_user(client: APIClient, user: User, room: Room) -> None:
     hotel2 = Hotel.objects.create(name="Другой", address="г. X, ул. Y, 2")
     room2 = Room.objects.create(hotel=hotel2, room_number="201", description="B", price="3000.00")
     Booking.objects.create(user=user, room=room, date_start="2026-05-01", date_end="2026-05-03")
@@ -114,7 +112,7 @@ def test_list_bookings_by_user(client, user, room):
 
 
 @pytest.mark.django_db
-def test_get_booking(client, user, room):
+def test_get_booking(client: APIClient, user: User, room: Room) -> None:
     b = Booking.objects.create(user=user, room=room, date_start="2026-05-01", date_end="2026-05-03")
     resp = client.get(f"/bookings/{b.id}")
     assert resp.status_code == 200
@@ -122,7 +120,7 @@ def test_get_booking(client, user, room):
 
 
 @pytest.mark.django_db
-def test_delete_booking(client, user, room):
+def test_delete_booking(client: APIClient, user: User, room: Room) -> None:
     b = Booking.objects.create(user=user, room=room, date_start="2026-05-01", date_end="2026-05-03")
     resp = client.delete(f"/bookings/{b.id}")
     assert resp.status_code == 204

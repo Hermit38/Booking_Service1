@@ -1,53 +1,46 @@
-# Git
+# git
 .git
 .gitignore
 
-# Python / Poetry окружение
+# Python / venv (хостовый — Windows-бинарники!)
 .venv
 venv
-env
 __pycache__
 *.py[cod]
 *$py.class
-*.so
-.Python
-build/
-dist/
-*.egg-info/
-.eggs/
 
-# Poetry кэш/артефакты (lock НЕ игнорируем!)
-# poetry.lock  ← не игнорировать, он нужен для install
-.pytest_cache/
-.ruff_cache/
-.mypy_cache/
+# кэши
+.pytest_cache
+.ruff_cache
+.mypy_cache
 .coverage
-htmlcov/
+htmlcov
 coverage.xml
 
-# Секреты и локальные конфиги
+# секреты
 .env
 .env.*
 !.env.example
 
 # IDE / OS
-.idea/
-.vscode/
+.idea
+.vscode
 *.swp
 .DS_Store
 Thumbs.db
 
-# Docker (не нужно тащить в контекст)
+# логи / локальная БД
+*.log
+db.sqlite3
+
+# Docker (не в контекст)
 Dockerfile
 .dockerignore
 docker-compose*.yml
 
-# Документация / мусор
-README.md
+# тесты (в прод-образе не нужны; если хочешь гонять в контейнере — убери)
+tests/
+
+# документация (не в образе; pyproject.toml readme — см. ниже)
 *.md
 !README.md
-*.log
-db.sqlite3
-
-# SQL (если монтируется в db-контейнер, app его не использует)
-schema.sql

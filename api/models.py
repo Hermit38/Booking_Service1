@@ -46,7 +46,10 @@ class Room(models.Model):
             models.Index(fields=["hotel", "created_at"], name="rooms_hotel_created_at_idx"),
         ]
         constraints = [
-            models.UniqueConstraint(fields=["hotel", "room_number"], name="rooms_hotel_number_uniq"),
+            models.UniqueConstraint(
+                fields=["hotel", "room_number"],
+                name="rooms_hotel_number_uniq",
+            ),
         ]
 
 
