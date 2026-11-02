@@ -35,6 +35,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - ./logs:/app/logs     # 🔥 Эта строчка свяжет папку логов внутри контейнера с вашей локальной папкой logs
     healthcheck:
       test: ["CMD", "python", "manage.py", "check"]  # Встроенная быстрая проверка Django на ошибки конфигурации
       interval: 30s

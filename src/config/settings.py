@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from config.config_env import settings
@@ -91,3 +92,52 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = "static/"
+
+
+LOGS_DIR = Path(__file__).resolve().parent.parent.parent / "logs"
+LOGS_DIR.mkdir(exist_ok=True)
+
+LOG_LEVEL = os.getenv("DJANGO_LOG_LEVEL", "INFO")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} [{levelname}] {name} (line {lineno}): {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        # 1. По-прежнему выводим в консоль (для Docker/терминала)
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+        # 2. Пишем в файл с ротацией по размеру
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOGS_DIR / "app.log",  # Файл будет лежать в /logs/app.log
+            "maxBytes": 5 * 1024 * 1024,  # Максимальный размер файла — 5 МБ
+            "backupCount": 5,  # Хранить до 5 старых файлов (app.log.1, app.log.2)
+            "formatter": "verbose",
+            "encoding": "utf-8",  # Чтобы кириллица не превращалась в кракозябры
+        },
+    },
+    "loggers": {
+        "": {
+            "handlers": ["console", "file"],  # Отправляем и в консоль, и в файл
+            "level": LOG_LEVEL,
+        },
+        "api": {
+            "handlers": ["console", "file"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "django": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}

@@ -1,3 +1,5 @@
+import logging
+
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from rest_framework.request import Request
@@ -16,6 +18,8 @@ from .serializers import (
     UserSerializer,
 )
 from .services import BookingService, HotelService, RoomService, UserService
+
+logger = logging.getLogger(__name__)
 
 # ============================================================
 # USERS
@@ -110,11 +114,15 @@ class RoomListCreateView(APIView):
         order = request.query_params.get("order", "asc")
 
         if sort not in {"price", "created_at"}:
+            # 🆕 Логируем некорректный параметр сортировки
+            logger.warning(f"Invalid sort parameter passed to /rooms: '{sort}'")
             return Response(
                 {"error": "sort must be 'price' or 'created_at'"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if order not in {"asc", "desc"}:
+            # 🆕 Логируем некорректный порядок сортировки
+            logger.warning(f"Invalid order parameter passed to /rooms: '{order}'")
             return Response(
                 {"error": "order must be 'asc' or 'desc'"},
                 status=status.HTTP_400_BAD_REQUEST,
