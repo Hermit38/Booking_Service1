@@ -33,7 +33,8 @@ FROM python:3.13-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH" \
-    VIRTUAL_ENV="/app/.venv"
+    VIRTUAL_ENV="/app/.venv" \
+    PYTHONPATH="/app/src"
 
 WORKDIR /app
 

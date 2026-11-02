@@ -11,7 +11,8 @@ dependencies = [
     "django (>=6.1.2,<7.0.0)",
     "djangorestframework (>=3.18.3,<4.0.0)",
     "psycopg[binary] (>=3.3.6,<4.0.0)",
-    "python-dotenv (>=1.2.4,<2.0.0)"
+    "python-dotenv (>=1.2.4,<2.0.0)",
+    "pydantic-settings (>=2.16.2,<3.0.0)"
 ]
 
 [build-system]
@@ -35,8 +36,12 @@ package-mode = false
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["test_*.py"]
 testpaths = ["tests"]
+# Говорим pytest, что исходники лежат в src:
+pythonpath = ["src"]
 
 [tool.ruff]
+known-first-party = ["api", "config"]
+src = ["src"]
 line-length = 100
 target-version = "py313" 
 exclude = [
@@ -52,6 +57,7 @@ known-first-party = ["api", "config"]
 
 [tool.mypy]
 python_version = "3.13"
+mypy_path = "src"
 plugins = [
     "mypy_django_plugin.main",
     "mypy_drf_plugin.main",

@@ -1,21 +1,22 @@
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
+from config.config_env import settings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+
+SECRET_KEY = settings.django_secret_key
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = settings.django_debug
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = settings.django_allowed_hosts
 
 
 # Application definition
@@ -52,14 +53,15 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
+# Точно так же можно переписать блок DATABASES:
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ["POSTGRES_DB"],  # без дефолта — явная ошибка
-        "USER": os.environ["POSTGRES_USER"],  # без дефолта
-        "PASSWORD": os.environ["POSTGRES_PASSWORD"],  # без дефолта (секрет!)
-        "HOST": os.getenv("POSTGRES_HOST", "localhost"),  # дефолт ок
-        "PORT": os.getenv("POSTGRES_PORT", "5432"),  # дефолт ок
+        "NAME": settings.postgres_db,
+        "USER": settings.postgres_user,
+        "PASSWORD": settings.postgres_password,
+        "HOST": settings.postgres_host,
+        "PORT": str(settings.postgres_port),
     }
 }
 
