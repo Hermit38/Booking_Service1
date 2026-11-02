@@ -12,7 +12,7 @@ def main() -> None:
     # Добавляем папку src в пути поиска модулей Python
     current_dir = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, os.path.join(current_dir, "src"))
-    
+
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

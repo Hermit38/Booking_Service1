@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from config.config_env import settings
