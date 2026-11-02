@@ -1,26 +1,29 @@
 services:
   db:
-    image: postgres:17
-    restart: unless-stopped
+    image: postgres:17-alpine
+    container_name: booking_db
+    restart: always  # 🔥 Гарантирует перезапуск БД при сбоях
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-booking_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 10
-      start_period: 10s
 
   app:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: booking_api
     restart: unless-stopped
     env_file:
       - .env                       # все переменные из .env
@@ -33,11 +36,10 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:9000/users').status==200 else 1)\""]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
+      test: ["CMD", "python", "manage.py", "check"]  # Встроенная быстрая проверка Django на ошибки конфигурации
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   pgdata:

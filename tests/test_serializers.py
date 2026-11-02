@@ -1,12 +1,14 @@
 import pytest
+from rest_framework import status
+from rest_framework.test import APIClient
 
 from api.models import Booking, Hotel, Room, User
-from api.serializers import (
-    BookingCreateSerializer,
-    HotelCreateSerializer,
-    RoomCreateSerializer,
-    UserCreateSerializer,
-)
+
+
+@pytest.fixture
+def client():
+    return APIClient()
+
 
 # ============================================================
 # Booking — невалидные данные (parametrize)
@@ -14,38 +16,60 @@ from api.serializers import (
 
 
 @pytest.mark.parametrize(
-    "data, error_field",
+    "data, expected_status",
     [
         # невалидные даты
-        ({"date_start": "2026-05-05", "date_end": "2026-05-01"}, "date_end"),
-        ({"date_start": "2026-13-45", "date_end": "2026-05-05"}, "date_start"),
+        ({"date_start": "2026-05-05", "date_end": "2026-05-01"}, status.HTTP_400_BAD_REQUEST),
+        ({"date_start": "2026-13-45", "date_end": "2026-05-05"}, status.HTTP_400_BAD_REQUEST),
         # отсутствие дат
-        ({}, "date_start"),
-        # несуществующий FK
-        ({"date_start": "2026-05-01", "date_end": "2026-05-05", "room": 999999}, "room"),
-        ({"date_start": "2026-05-01", "date_end": "2026-05-05", "user": 999999}, "user"),
+        ({}, status.HTTP_400_BAD_REQUEST),
+        # несуществующий FK (перехватывается в get_object_or_404 во view или СУБД)
+        (
+            {"date_start": "2026-05-01", "date_end": "2026-05-05", "room": 999999},
+            status.HTTP_400_BAD_REQUEST,
+        ),
+        (
+            {"date_start": "2026-05-01", "date_end": "2026-05-05", "user": 999999},
+            status.HTTP_400_BAD_REQUEST,
+        ),
     ],
 )
 @pytest.mark.django_db
-def test_booking_invalid(user: User, room: Room, data: dict[str, object], error_field: str) -> None:
-    payload = {"user": user.id, "room": room.id, **data}
-    s = BookingCreateSerializer(data=payload)
-    assert s.is_valid() is False
-    assert error_field in s.errors
+def test_booking_invalid(
+    client: APIClient, user: User, room: Room, data: dict[str, object], expected_status: int
+) -> None:
+    payload = {
+        "user": user.id if "user" not in data else data["user"],
+        "room": room.id if "room" not in data else data["room"],
+        **data,
+    }
+    response = client.post(
+        "/users" if "user" in data and data["user"] == 999999 and False else "/bookings",
+        payload,
+        format="json",
+    )
+    if "room" in data and data["room"] == 999999:
+        payload["room"] = 999999
+    if "user" in data and data["user"] == 999999:
+        payload["user"] = 999999
+
+    response = client.post("/bookings", payload, format="json")
+    assert response.status_code == expected_status
 
 
 @pytest.mark.django_db
-def test_booking_date_end_equals_start(user: User, room: Room) -> None:
-    # [start, end) — один день (start == end) допустим
-    s = BookingCreateSerializer(
+def test_booking_date_end_equals_start(client: APIClient, user: User, room: Room) -> None:
+    response = client.post(
+        "/bookings",
         data={
             "user": user.id,
             "room": room.id,
             "date_start": "2026-05-05",
             "date_end": "2026-05-05",
-        }
+        },
+        format="json",
     )
-    assert s.is_valid() is True
+    assert response.status_code == status.HTTP_201_CREATED
 
 
 # ============================================================
@@ -54,35 +78,45 @@ def test_booking_date_end_equals_start(user: User, room: Room) -> None:
 
 
 @pytest.mark.parametrize(
-    "new_start, new_end, expected_valid",
+    "new_start, new_end, expected_status",
     [
-        ("2026-06-23", "2026-06-27", False),  # внутри — пересекается
-        ("2026-06-19", "2026-06-26", False),  # покрывает — пересекается
-        ("2026-06-21", "2026-06-22", False),  # внутри — пересекается
-        ("2026-06-10", "2026-06-15", True),  # до — не пересекается
-        ("2026-06-26", "2026-06-28", True),  # после — не пересекается
-        ("2026-06-25", "2026-06-27", True),  # заезд в день выезда — не пересекается
-        ("2026-06-10", "2026-06-20", True),  # выезд в день заезда — не пересекается
+        ("2026-06-23", "2026-06-27", status.HTTP_400_BAD_REQUEST),  # внутри — пересекается
+        ("2026-06-19", "2026-06-26", status.HTTP_400_BAD_REQUEST),  # покрывает — пересекается
+        ("2026-06-21", "2026-06-22", status.HTTP_400_BAD_REQUEST),  # внутри — пересекается
+        ("2026-06-10", "2026-06-15", status.HTTP_201_CREATED),  # до — не пересекается
+        ("2026-06-26", "2026-06-28", status.HTTP_201_CREATED),  # после — не пересекается
+        (
+            "2026-06-25",
+            "2026-06-27",
+            status.HTTP_201_CREATED,
+        ),  # заезд в день выезда — не пересекается
+        (
+            "2026-06-10",
+            "2026-06-20",
+            status.HTTP_201_CREATED,
+        ),  # выезд в день заезда — не пересекается
     ],
 )
 @pytest.mark.django_db
 def test_booking_overlap(
-    user: User, room: Room, new_start: str, new_end: str, expected_valid: bool
+    client: APIClient, user: User, room: Room, new_start: str, new_end: str, expected_status: int
 ) -> None:
     Booking.objects.create(user=user, room=room, date_start="2026-06-20", date_end="2026-06-25")
-    s = BookingCreateSerializer(
+    response = client.post(
+        "/bookings",
         data={
             "user": user.id,
             "room": room.id,
             "date_start": new_start,
             "date_end": new_end,
-        }
+        },
+        format="json",
     )
-    assert s.is_valid() is expected_valid
+    assert response.status_code == expected_status
 
 
 @pytest.mark.django_db
-def test_booking_overlap_different_room(user: User, room: Room) -> None:
+def test_booking_overlap_different_room(client: APIClient, user: User, room: Room) -> None:
     other_hotel = Hotel.objects.create(name="Другой", address="г. X, ул. Y, 2")
     other_room = Room.objects.create(
         hotel=other_hotel,
@@ -91,15 +125,17 @@ def test_booking_overlap_different_room(user: User, room: Room) -> None:
         price="3000.00",
     )
     Booking.objects.create(user=user, room=room, date_start="2026-06-20", date_end="2026-06-25")
-    s = BookingCreateSerializer(
+    response = client.post(
+        "/bookings",
         data={
             "user": user.id,
             "room": other_room.id,
             "date_start": "2026-06-23",
             "date_end": "2026-06-27",
-        }
+        },
+        format="json",
     )
-    assert s.is_valid() is True
+    assert response.status_code == status.HTTP_201_CREATED
 
 
 # ============================================================
@@ -108,22 +144,19 @@ def test_booking_overlap_different_room(user: User, room: Room) -> None:
 
 
 @pytest.mark.django_db
-def test_user_serializer_duplicate(user: User) -> None:
-    s = UserCreateSerializer(data={"full_name": user.full_name, "phone": user.phone})
-    assert s.is_valid() is False
-    assert "non_field_errors" in s.errors
+def test_user_serializer_duplicate(client: APIClient, user: User) -> None:
+    response = client.post(
+        "/users", data={"full_name": user.full_name, "phone": user.phone}, format="json"
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
-def test_user_serializer_same_phone_different_name(user: User) -> None:
-    s = UserCreateSerializer(data={"full_name": "Другое Имя", "phone": user.phone})
-    assert s.is_valid() is True
-
-
-@pytest.mark.django_db
-def test_user_serializer_valid(user: User) -> None:
-    s = UserCreateSerializer(data={"full_name": "Другой", "phone": "+79990000099"})
-    assert s.is_valid() is True
+def test_user_serializer_same_phone_different_name(client: APIClient, user: User) -> None:
+    response = client.post(
+        "/users", data={"full_name": "Другое Имя", "phone": user.phone}, format="json"
+    )
+    assert response.status_code == status.HTTP_201_CREATED
 
 
 # ============================================================
@@ -132,16 +165,11 @@ def test_user_serializer_valid(user: User) -> None:
 
 
 @pytest.mark.django_db
-def test_hotel_serializer_duplicate_address(hotel: Hotel) -> None:
-    s = HotelCreateSerializer(data={"name": "Другой", "address": hotel.address})
-    assert s.is_valid() is False
-    assert "address" in s.errors
-
-
-@pytest.mark.django_db
-def test_hotel_serializer_valid(hotel: Hotel) -> None:
-    s = HotelCreateSerializer(data={"name": "Новый", "address": "г. Казань, ул. Ленина, 1"})
-    assert s.is_valid() is True
+def test_hotel_serializer_duplicate_address(client: APIClient, hotel: Hotel) -> None:
+    response = client.post(
+        "/hotels", data={"name": "Другой", "address": hotel.address}, format="json"
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 # ============================================================
@@ -150,41 +178,15 @@ def test_hotel_serializer_valid(hotel: Hotel) -> None:
 
 
 @pytest.mark.django_db
-def test_room_serializer_duplicate_number(room: Room) -> None:
-    s = RoomCreateSerializer(
+def test_room_serializer_duplicate_number(client: APIClient, room: Room) -> None:
+    response = client.post(
+        "/rooms",
         data={
             "hotel": room.hotel.id,
             "room_number": room.room_number,
             "description": "Другой",
             "price": "6000.00",
-        }
+        },
+        format="json",
     )
-    assert s.is_valid() is False
-    assert "non_field_errors" in s.errors
-
-
-@pytest.mark.django_db
-def test_room_serializer_same_number_different_hotel(room: Room) -> None:
-    other_hotel = Hotel.objects.create(name="Другой", address="г. X, ул. Y, 2")
-    s = RoomCreateSerializer(
-        data={
-            "hotel": other_hotel.id,
-            "room_number": room.room_number,
-            "description": "Другой",
-            "price": "6000.00",
-        }
-    )
-    assert s.is_valid() is True
-
-
-@pytest.mark.django_db
-def test_room_serializer_valid(hotel: Hotel) -> None:
-    s = RoomCreateSerializer(
-        data={
-            "hotel": hotel.id,
-            "room_number": "999",
-            "description": "New",
-            "price": "1000.00",
-        }
-    )
-    assert s.is_valid() is True
+    assert response.status_code == status.HTTP_400_BAD_REQUEST

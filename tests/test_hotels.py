@@ -11,14 +11,22 @@ def client() -> APIClient:
 
 @pytest.mark.django_db
 def test_create_hotel(client: APIClient) -> None:
-    resp = client.post("/hotels", {"name": "Новый", "address": "г. Казань, ул. Ленина, 1"})
+    resp = client.post(
+        "/hotels", {"name": "Новый", "address": "г. Казань, ул. Ленина, 1", "description": ""}
+    )
     assert resp.status_code == 201
     assert "hotel_id" in resp.json()
 
 
 @pytest.mark.django_db
 def test_create_hotel_duplicate_address(client: APIClient, hotel: Hotel) -> None:
-    resp = client.post("/hotels", {"name": "Другой", "address": hotel.address})
+    resp = client.post(
+        "/hotels",
+        {
+            "name": "Другой",
+            "address": hotel.address,
+        },
+    )
     assert resp.status_code == 400
     assert "error" in resp.json()
 
