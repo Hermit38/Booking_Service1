@@ -4,13 +4,17 @@ __pycache__/
 *.egg-info/
 
 # Poetry / venv
+.poetry/
 .venv/
 venv/
+ENV/
+
 
 # Env / secrets
 .env
+**/.env
+*/.env
 .env.*
-!.env.example
 
 # Кэши
 .pytest_cache/
@@ -25,3 +29,4 @@ Thumbs.db
 
 # Docker (не обязательно, но чисто)
 *.log
+logs/

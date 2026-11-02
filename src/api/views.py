@@ -1,5 +1,5 @@
-from django.db import IntegrityError
 from rest_framework import status
+from rest_framework.generics import get_object_or_404  # <-- Добавили утилиту
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -31,13 +31,7 @@ class UserListCreateView(APIView):
     def post(self, request: Request) -> Response:
         serializer = UserCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        try:
-            user = serializer.save()
-        except IntegrityError:
-            return Response(
-                {"error": "User with this full_name and phone already exists"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        user = serializer.save()
         return Response({"user_id": user.id}, status=status.HTTP_201_CREATED)
 
 
@@ -45,24 +39,14 @@ class UserDetailView(APIView):
     """GET /users/{id} — один; DELETE /users/{id} — удалить."""
 
     def get(self, request: Request, user_id: int) -> Response:
-        try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        # Ищет объект. Если не находит — выбрасывает ошибку 404,
+        # которую ваш custom_exception_handler превратит в {"error": "User not found"}
+        user = get_object_or_404(User, id=user_id)
         return Response(UserSerializer(instance=user).data)
 
     def delete(self, request: Request, user_id: int) -> Response:
-        try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        try:
-            user.delete()
-        except IntegrityError:
-            return Response(
-                {"error": "Cannot delete user with bookings (RESTRICT)"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        user = get_object_or_404(User, id=user_id)
+        user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -81,13 +65,7 @@ class HotelListCreateView(APIView):
     def post(self, request: Request) -> Response:
         serializer = HotelCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        try:
-            hotel = serializer.save()
-        except IntegrityError:
-            return Response(
-                {"error": "Hotel with this address already exists"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        hotel = serializer.save()
         return Response({"hotel_id": hotel.id}, status=status.HTTP_201_CREATED)
 
 
@@ -95,18 +73,12 @@ class HotelDetailView(APIView):
     """GET /hotels/{id} — один; DELETE /hotels/{id} — удалить (CASCADE)."""
 
     def get(self, request: Request, hotel_id: int) -> Response:
-        try:
-            hotel = Hotel.objects.get(id=hotel_id)
-        except Hotel.DoesNotExist:
-            return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
+        hotel = get_object_or_404(Hotel, id=hotel_id)
         return Response(HotelSerializer(instance=hotel).data)
 
     def delete(self, request: Request, hotel_id: int) -> Response:
-        try:
-            hotel = Hotel.objects.get(id=hotel_id)
-        except Hotel.DoesNotExist:
-            return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
-        hotel.delete()  # CASCADE: rooms -> bookings
+        hotel = get_object_or_404(Hotel, id=hotel_id)
+        hotel.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -145,13 +117,7 @@ class RoomListCreateView(APIView):
     def post(self, request: Request) -> Response:
         serializer = RoomCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        try:
-            room = serializer.save()
-        except IntegrityError:
-            return Response(
-                {"error": "Room with this number already exists in this hotel"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        room = serializer.save()
         return Response({"room_id": room.id}, status=status.HTTP_201_CREATED)
 
 
@@ -159,17 +125,11 @@ class RoomDetailView(APIView):
     """GET /rooms/{id}; DELETE /rooms/{id} (CASCADE: bookings)."""
 
     def get(self, request: Request, room_id: int) -> Response:
-        try:
-            room = Room.objects.get(id=room_id)
-        except Room.DoesNotExist:
-            return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
+        room = get_object_or_404(Room, id=room_id)
         return Response(RoomSerializer(instance=room).data)
 
     def delete(self, request: Request, room_id: int) -> Response:
-        try:
-            room = Room.objects.get(id=room_id)
-        except Room.DoesNotExist:
-            return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
+        room = get_object_or_404(Room, id=room_id)
         room.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -198,13 +158,7 @@ class BookingListCreateView(APIView):
     def post(self, request: Request) -> Response:
         serializer = BookingCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        try:
-            booking = serializer.save()
-        except IntegrityError:
-            return Response(
-                {"error": "Booking already exists for this user/room/dates"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        booking = serializer.save()
         return Response({"booking_id": booking.id}, status=status.HTTP_201_CREATED)
 
 
@@ -212,16 +166,10 @@ class BookingDetailView(APIView):
     """GET /bookings/{id}; DELETE /bookings/{id}."""
 
     def get(self, request: Request, booking_id: int) -> Response:
-        try:
-            booking = Booking.objects.get(id=booking_id)
-        except Booking.DoesNotExist:
-            return Response({"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND)
+        booking = get_object_or_404(Booking, id=booking_id)
         return Response(BookingSerializer(instance=booking).data)
 
     def delete(self, request: Request, booking_id: int) -> Response:
-        try:
-            booking = Booking.objects.get(id=booking_id)
-        except Booking.DoesNotExist:
-            return Response({"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND)
+        booking = get_object_or_404(Booking, id=booking_id)
         booking.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

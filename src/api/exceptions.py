@@ -1,5 +1,7 @@
 import logging
 
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -31,6 +33,22 @@ def custom_exception_handler(exc: Exception, context: dict[str, object]) -> Resp
             status=response.status_code,
             headers=response.headers,
         )
+    # 2. 🔥 Глобально перехватываем отсутствие записи в БД (DoesNotExist)
+    if isinstance(exc, ObjectDoesNotExist):
+        # Достаем имя модели из ошибки, чтобы текст был понятным ("User not found")
+        model_name = getattr(exc, "model_name", "Object")
+        return Response({"error": f"{model_name} not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # 3. 🔥 Глобально перехватываем ошибки уникальности/ограничений БД
+    if isinstance(exc, IntegrityError):
+        # Опционально: можно распарсить exc, чтобы выдать точный текст,
+        # либо вернуть универсальный ответ как в примере вашего ТЗ
+        return Response(
+            {"error": "Database constraint violation (e.g. duplicate key or restrict constraint)"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # 3. Все остальные непредвиденные ошибки (500)
     logger.exception("Unhandled exception: %s", exc)
     return Response(
         {"error": "Internal server error"},
